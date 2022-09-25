@@ -12,7 +12,7 @@ if(WIN32)
 endif()
 
 # Project
-project(nanovna_qt C CXX)
+project(nanovna_PyWrapped C CXX)
 
 set(xaVNA_VERSION_MAJOR 0)
 set(xaVNA_VERSION_MINOR 1)
@@ -27,11 +27,11 @@ if(UNIX)
 endif()
 
 if(NOT LIB_INSTALL_DIR)
-    set(LIB_INSTALL_DIR lib)
+    set(LIB_INSTALL_DIR build/lib)
 endif()
 
 if(NOT BIN_INSTALL_DIR)
-    set(BIN_INSTALL_DIR bin)
+    set(BIN_INSTALL_DIR build/bin)
 endif()
 
 # Set version
@@ -61,28 +61,21 @@ if(EIGEN3_FOUND)
 endif()
 
 # ==============================================================================
-# FFTW3
-# ==============================================================================
-find_package(FFTW3 REQUIRED)
-if(FFTW3_FOUND)
-  message(STATUS "Found FFTW3 (${FFTW3_VERSION})")
-  message(STATUS "  fftw3 includes: ${FFTW3_INCLUDE_DIRS}")
-  message(STATUS "  fftw3 libraries: ${FFTW3_LIBRARIES}")
-  include_directories(${FFTW3_INCLUDE_DIR})
-endif()
-
-# ==============================================================================
-# QT5 Charts (and QT5 subdependences)
-# ==============================================================================
-find_package(Qt5 COMPONENTS Core Gui Widgets Charts REQUIRED)
-if(Qt5Charts_FOUND)
-  message(STATUS "Found QT5 version: ${Qt5_VERSION}")
-  message(STATUS "  qt5 charts dir: ${Qt5Charts_DIR}")
-endif()
-
-# ==============================================================================
 # xaVNA subprojects
 # ==============================================================================
 add_subdirectory(libxavna)
-add_subdirectory(libxavna/xavna_mock_ui)
-add_subdirectory(vna_qt)
+
+set(xavna_controller_SRC xavna_controller.cpp)
+
+add_executable(xavna_controller ${xavna_controller_SRC})
+
+set_target_properties(xavna_controller PROPERTIES
+                        VERSION ${xaVNA_VERSION_STRING}
+                        SOVERSION ${xaVNA_VERSION_MAJOR})
+
+target_link_libraries(xavna_controller LINK_PUBLIC xavna)
+
+# Declare destinations
+install(TARGETS xavna_controller
+        LIBRARY DESTINATION ${LIB_INSTALL_DIR}
+        ARCHIVE DESTINATION ${LIB_INSTALL_DIR})

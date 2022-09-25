@@ -1,4 +1,3 @@
-
 set(libxavna_SRC xavna.C
                  xavna_cpp.C
                  calibration.C)
@@ -15,7 +14,7 @@ set_target_properties(xavna PROPERTIES
                         VERSION ${xaVNA_VERSION_STRING}
                         SOVERSION ${xaVNA_VERSION_MAJOR})
 
-target_link_libraries(xavna ${xa_LIBRARIES})
+target_include_directories(xavna PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Declare destinations
 install(TARGETS xavna
