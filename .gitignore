@@ -11,14 +11,13 @@ pcb/*.png
 pcb/*/*.png
 *.tar.gz
 vhdl/spiflash.*
-/Makefile
 /xavna_windows/*
 /xavna-src/*
 /*.zip
 /*.tar.gz
 libtool
 *.AppImage
-
+*.elf
 */.deps/*
 */.libs/*
 *.lo
@@ -35,13 +34,13 @@ moc_*.h
 ui_*.h
 *.exe
 *.o
-Makefile
 Makefile.in
 /ar-lib
 /mdate-sh
 /py-compile
 /test-driver
 /ylwrap
+/.vscode*
 
 # http://www.gnu.org/software/autoconf
 
