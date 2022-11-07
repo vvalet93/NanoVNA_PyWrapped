@@ -9,6 +9,7 @@ CC=g++
 CFLAGS=-I$(IDIR) 
 POSTFLAGS=-lpthread
 
+
 # List of all .c/.cpp source files.
 SRC = xavna_controller.cpp $(wildcard libxavna/*.cpp)
 
@@ -38,7 +39,7 @@ $(BUILD_DIR)/%.o : %.cpp
 	mkdir -p $(@D)
     # The -MMD flags additionaly creates a .d file with
     # the same name as the .o file.
-	$(CC) $(CFLAGS) -MMD -c $< -o $@ $(POSTFLAGS)
+	$(CC) $(CFLAGS) -MMD -c -fPIC $< -o $@ $(POSTFLAGS)
 
 .PHONY : clean
 clean :
