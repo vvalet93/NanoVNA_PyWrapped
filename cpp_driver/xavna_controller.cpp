@@ -5,6 +5,7 @@
 // 1. Sweep settings. READ MANUAL, do not change parameters when sweep is running!
 // 2. Return measurement results.
 // 3. Calibration.
+// 4. Debug mode. Switch off chunkPoints etc..
 
 extern "C"{
     // Open a vna device
@@ -28,11 +29,16 @@ extern "C"{
         }
     }
 
-    // Close the vna device and dispose the object.
+    // Close the vna device.
     void disconnect(VNADevice* vna){
         vna->close();
+        std::cout << "Disconnected from VNA!" << std::endl;
+    }
+
+    // Dispose the object.
+    void dispose(VNADevice* vna){
         delete vna;
-        std::cout << "Disconnected from VNA! Object was disposed." << std::endl;
+        std::cout << "Object was disposed." << std::endl;
     }
      
     // Start the frequency sweep background thread, which repeatedly performs

@@ -7,8 +7,11 @@ extern "C"{
     // Device will be found and selected automatically
     VNADevice* findVnaAndConnect();
 
-    // Close the vna device and dispose the object.
+    // Close the vna device.
     void disconnect(VNADevice* vna);
+
+    // Dispose the object.
+    void dispose(VNADevice* vna);
 
     // Start the frequency sweep background thread, which repeatedly performs
     // scans until it is stopped using stopScan()
