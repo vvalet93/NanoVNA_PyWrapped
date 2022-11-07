@@ -1,5 +1,5 @@
-# Final binary
-BIN = main
+# Final shared library
+BIN = xavna_controller.so
 
 # Put all auto generated stuff to this build dir.
 BUILD_DIR = ../build
@@ -27,7 +27,7 @@ $(BUILD_DIR)/$(BIN) : $(OBJ)
     # Create build directories - same structure as sources.
 	mkdir -p $(@D)
     # Just link all the object files.
-	$(CC) $^ -o $@ $(POSTFLAGS) 
+	$(CC) -shared -Wl,-soname,$(BUILD_DIR)/$(BIN) -o $(BUILD_DIR)/$(BIN) $^
 	
 # Include all .d files
 -include $(DEP)
