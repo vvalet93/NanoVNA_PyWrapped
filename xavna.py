@@ -17,6 +17,9 @@ class VNA(object):
     def set_sweep_params(self, start_freq, stop_freq, points, average):
         self._xavnalib.setSweepParams(self.obj, c_double(start_freq), c_double(stop_freq), c_int(points), c_int(average))
 
+    def save_meas_data_to_file(self, filename):
+        self._xavnalib.saveMeasDataToFile(self.obj)
+
     def __del__(self):
         self.disconnect()
         self._xavnalib.dispose(self.obj)

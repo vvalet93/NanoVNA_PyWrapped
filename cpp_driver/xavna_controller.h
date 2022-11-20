@@ -23,11 +23,14 @@ extern "C"{
     // Whether the background thread is running
     bool isScanning(VNADevice* vna);
 
-    // Wait for one full measurement, and call cb with results
-    void takeMeasurement(VNADevice* vna);
+    // Save the lates measurements to file.
+    void saveMeasDataToFile(VNADevice* vna);
 
     // Changes sweep parameters. If sweep is running - stops it, changes parameters and run it again.
 	void setSweepParams(VNADevice* vna, double startFreqHz, double stopFreqHz, int points, int average);
+
+    // Changes sweep parameters. If sweep is running - stops it, changes parameters and run it again.
+	//double* getS21Magnitude(VNADevice* vna, double startFreqHz, double stopFreqHz, int points, int average);
 
     double getStartFreqHz(VNADevice* vna);
 
@@ -50,4 +53,6 @@ extern "C"{
     int getAtt1(VNADevice* vna);
 
     int getAtt2(VNADevice* vna);
+
+    vector<VNARawValue> measurements;
 }

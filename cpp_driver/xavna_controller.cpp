@@ -1,5 +1,6 @@
 #include "xavna_controller.h"
 #include <iostream>
+#include <fstream>
 
 // TODO
 // 1. Return measurement results.
@@ -11,13 +12,13 @@ extern "C"{
     // Device will be found and selected automatically
     VNADevice* findVnaAndConnect(){
         auto vna = new VNADevice();
-        vna->sweepCompletedCallback = [] (const vector<VNARawValue>& vals) { };
-        vna->frequencyCompletedCallback = [] (int freqIndex, VNARawValue val) { };
-        vna->backgroundErrorCallback = [] (const exception& exc) { };
-        
+ 
         try
         {
             vna->open(""); // It will find device if name is not provided.
+            vna->sweepCompletedCallback = [] (const vector<VNARawValue>& vals) { measurements = vals; };
+            vna->frequencyCompletedCallback = [] (int freqIndex, VNARawValue val) { };
+            vna->backgroundErrorCallback = [] (const exception& exc) { std::cout<<"Measurement error!\n" << exc.what(); };
             return vna;
         }
         catch (const runtime_error& error)
@@ -82,14 +83,34 @@ extern "C"{
     }
 
     // Wait for one full measurement, and call cb with results
-    void takeMeasurement(VNADevice* vna){
+    void saveMeasDataToFile(VNADevice* vna){
+        string filename = "meas.txt";
         if (vna == nullptr){
             std::cout << "Instance is null." << std::endl;
             return;
         }
-        vna->sweepCompletedCallback = [] (const vector<VNARawValue>& vals) { };
+        
+        if (!isScanning(vna)){
+            std::cout << "takeMeasurement: Sweep must be run first!" << std::endl;
+            return;
+        }
 
-        return; // TODO
+        if (measurements.size() == 0){
+            std::cout << "takeMeasurement: Data is not available!" << std::endl;
+            return;
+        }
+
+        ofstream myfile (filename);
+        myfile.clear();
+        if (myfile.is_open())
+        {
+            for_each(measurements.begin(), measurements.end(), 
+                [&myfile](const VNARawValue& val){ myfile << val(0,0) << "\t" << val(1,0) << "\t" << val(0,1) << "\t"<< val(1,1) << "\n";}
+            );
+
+            myfile.close();
+        }
+        else cout << "takeMeasurement: Unable to open file" + filename;
     }
 
     // Changes sweep parameters. If sweep is running - stops it, changes parameters and run it again.
