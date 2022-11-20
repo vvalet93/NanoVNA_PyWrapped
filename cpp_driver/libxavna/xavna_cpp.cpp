@@ -46,11 +46,11 @@ namespace xaxaxa {
 		bool a = isAutoSweep();
 		if(a != _lastDeviceIsAutosweep) {
 			if(isAutoSweep()) {
-				nValues = 2;
-				nWait = -1;
+				_nValues = 2;
+				_nWait = -1;
 			} else {
-				nValues = 30;
-				nWait = 20;
+				_nValues = 30;
+				_nWait = 20;
 			}
 		}
 		_lastDeviceIsAutosweep = a;
@@ -65,7 +65,7 @@ namespace xaxaxa {
 		return xavna_is_autosweep(_dev);
 	}
 	bool VNADevice::isTRMode() {
-		return isTR() || forceTR;
+		return isTR() || _forceTR;
 	}
 	void VNADevice::startScan() {
 		if(!_dev) throw logic_error("VNADevice: you must call open() before calling startScan()");
@@ -91,6 +91,22 @@ namespace xaxaxa {
 			_dev = NULL;
 		}
 	}
+
+	void VNADevice::setSweepParams(double startFreqHz, double stopFreqHz, int points, int average) {
+		bool stopWasTriggered {false};
+		if (_threadRunning){
+			stopScan();
+			stopWasTriggered = true;
+		} 
+		if (_threadRunning) throw logic_error("setSweepParams: could not stop sweep.");
+
+		_startFreqHz = startFreqHz;
+		_stepFreqHz = (stopFreqHz - startFreqHz) / (points - 1);
+		_nPoints = points;
+		_nValues = average;
+
+		if (stopWasTriggered) startScan();
+	}
 	
 	void VNADevice::takeMeasurement(function<void(const vector<VNARawValue>& vals)> cb) {
 		if(!_threadRunning) throw logic_error("takeMeasurement: vna scan thread must be started");
@@ -112,8 +128,8 @@ namespace xaxaxa {
 		uint32_t last_measurementCnt = _measurementCnt;
 		int cnt=0;
 		while(!_shouldExit) {
-			vector<VNARawValue> results(nPoints);
-			for(int i=0;i<nPoints;i++) {
+			vector<VNARawValue> results(_nPoints);
+			for(int i=0;i<_nPoints;i++) {
 				fflush(stdout);
 				int ports = tr?1:2;
 				
@@ -121,20 +137,20 @@ namespace xaxaxa {
 				// e.g. values[0][1] is wave 1 measured with excitation on port 0
 				vector<array<complex<double>, 4> > values(ports);
 				for(int port=0; port<ports; port++) {
-					int p = swapPorts?(1-port):port;
+					int p = _swapPorts?(1-port):port;
 					if(!_noscan) {
 						if(xavna_set_params(_dev, (int)round(freqAt(i)/1000.),
-											(p==0?attenuation1:attenuation2), p, nWait) < 0) {
+											(p==0?_attenuation1:_attenuation2), p, _nWait) < 0) {
 							backgroundErrorCallback(runtime_error("xavna_set_params failed: " + string(strerror(errno))));
 							return NULL;
 						}
 					}
-                    if(xavna_read_values_raw(_dev, (double*)&values[port], nValues)<0) {
+                    if(xavna_read_values_raw(_dev, (double*)&values[port], _nValues)<0) {
 						backgroundErrorCallback(runtime_error("xavna_read_values_raw failed: " + string(strerror(errno))));
 						return NULL;
 					}
 				}
-				if(swapPorts) {
+				if(_swapPorts) {
 					for(int port=0;port<ports;port++) {
 						swap(values[port][0], values[port][2]);
 						swap(values[port][1], values[port][3]);
@@ -143,7 +159,7 @@ namespace xaxaxa {
 				
 				VNARawValue tmp;
 				if(tr) {
-					if(disableReference)
+					if(_disableReference)
 						tmp << values[0][1], 0,
 						        values[0][3], 0;
 					else
@@ -214,15 +230,15 @@ namespace xaxaxa {
 		int measurementEndPoint = -1;
 		double currChunkPoints = 16.;
 		int chunkPoints = (int)currChunkPoints;
-		int nValues = this->nValues;
+		int _nValues = this->_nValues;
 		int collectDataState = 0;
 		int cnt = 0;
 		int currValueIndex = 0;
-		vector<VNARawValue> results(nPoints);
+		vector<VNARawValue> results(_nPoints);
 		vector<array<complex<double>, 4> > rawValues(1);
 		rawValues[0] = {0., 0., 0., 0.};
 		
-		xavna_set_autosweep(_dev, startFreqHz, stepFreqHz, nPoints, nValues);
+		xavna_set_autosweep(_dev, _startFreqHz, _stepFreqHz, _nPoints, _nValues);
 		while(!_shouldExit) {
 			fflush(stdout);
 			int chunkValues = chunkPoints;
@@ -247,8 +263,8 @@ namespace xaxaxa {
 				for(int j=0; j<4; j++)
 					rawValues[0][j] += currRawValue[j];
 
-				if(value.freqIndex >= nPoints) {
-					fprintf(stderr, "warning: hw returned freqIndex (%d) >= nPoints (%d)\n", value.freqIndex, nPoints);
+				if(value.freqIndex >= _nPoints) {
+					fprintf(stderr, "warning: hw returned freqIndex (%d) >= _nPoints (%d)\n", value.freqIndex, _nPoints);
 					continue;
 				}
 
@@ -259,9 +275,9 @@ namespace xaxaxa {
 				} else currValueIndex++;
 
 				// last value for this frequency point
-				if(currValueIndex == nValues - 1) {
+				if(currValueIndex == _nValues - 1) {
 					VNARawValue tmp;
-					if(disableReference)
+					if(_disableReference)
 						tmp << rawValues[0][1], 0,
 						        rawValues[0][3], 0;
 					else
@@ -270,23 +286,23 @@ namespace xaxaxa {
 					frequencyCompletedCallback(value.freqIndex, tmp);
 					frequencyCompletedCallback2_(value.freqIndex, rawValues);
 					results[value.freqIndex] = tmp;
-					if(value.freqIndex == nPoints - 1)
+					if(value.freqIndex == _nPoints - 1)
 						sweepCompletedCallback(results);
 					rawValues[0] = {0., 0., 0., 0.};
 				}
 				if(_shouldExit) return NULL;
 				if(collectDataState == 1 && value.freqIndex == 0) {
 					collectDataState = 2;
-				} else if(collectDataState == 2 && value.freqIndex == nPoints - 1) {
+				} else if(collectDataState == 2 && value.freqIndex == _nPoints - 1) {
 					collectDataState = 3;
 					cnt = 0;
 				} else if(collectDataState == 3) {
-					if(currValueIndex == nValues - 1) {
+					if(currValueIndex == _nValues - 1) {
 						cnt++;
 						if(cnt >= 5) {
 							collectDataState = 0;
-							nValues = this->nValues;
-							xavna_set_autosweep(_dev, startFreqHz, stepFreqHz, nPoints, nValues);
+							_nValues = this->_nValues;
+							xavna_set_autosweep(_dev, _startFreqHz, _stepFreqHz, _nPoints, _nValues);
 
 							function<void(const vector<VNARawValue>& vals)> func
 									= *(function<void(const vector<VNARawValue>& vals)>*)_cb_;
@@ -300,8 +316,8 @@ namespace xaxaxa {
 				// collect measurement requested
 				last_measurementCnt = _measurementCnt;
 				// when collecting measurements, use double the averaging factor
-				nValues = this->nValues * 2;
-				xavna_set_autosweep(_dev, startFreqHz, stepFreqHz, nPoints, nValues);
+				_nValues = this->_nValues * 2;
+				xavna_set_autosweep(_dev, _startFreqHz, _stepFreqHz, _nPoints, _nValues);
 				collectDataState = 1;
 			}
 			

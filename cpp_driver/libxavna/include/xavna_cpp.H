@@ -5,25 +5,13 @@
 #include <array>
 #include <stdexcept>
 #include "common.H"
+#include <iostream>
 
 using namespace std;
 
 namespace xaxaxa {
 	class VNADevice {
 	public:
-		// frequency sweep parameters; do NOT change while background thread is running
-		double startFreqHz=200e6;	// start frequency in Hz
-		double stepFreqHz=25e6;		// step frequency in Hz
-		int nPoints=50;				// how many frequency points
-		int nValues=30;	 			// how many values to average over
-		int nWait=20;				// how many values to skip after changing frequency
-		bool disableReference = false;	// if true, do not divide by reference value
-		bool forceTR = false;		// if device is full two port vna, force T/R mode
-		bool swapPorts = false;		// only supported on full two port vna
-
-		// rf parameters
-		int attenuation1=25, attenuation2=25;
-		
 		// called by background thread when a single frequency measurement is done
         function<void(int freqIndex, VNARawValue val)> frequencyCompletedCallback;
         
@@ -72,26 +60,76 @@ namespace xaxaxa {
 		
 		// wait for one full measurement, and call cb with results
 		void takeMeasurement(function<void(const vector<VNARawValue>& vals)> cb);
+
+		// Changes sweep parameters. If sweep is running - stops it, changes parameters and run it again.
+		void setSweepParams(double startFreqHz, double stopFreqHz, int points, int average);
 		
 		// return the frequency in Hz at an array index
 		double freqAt(int i) {
-			return startFreqHz+i*stepFreqHz;
+			return _startFreqHz+i*_stepFreqHz;
 		}
 		
 		// return highest power output in dBm
 		int maxPower() const {
 			return 10;
 		}
+
+		double getStartFreqHz(){
+			return _startFreqHz;
+		}
+
+		double getStopFreqHz(){
+			return _startFreqHz + ((_nPoints - 1) * _stepFreqHz);
+		}
+
+		double getStepFreqHz(){;
+			return  _stepFreqHz;
+		}
+
+		int getPointsCount(){
+			return  _nPoints;
+		}
+
+		int getAverageRate(){
+			return  _nValues;
+		}
+
+		int getSweepDelay(){
+			return  _nWait;
+		}
 		
+		bool isDisableReference(){
+			return  _disableReference;
+		}
+
+		bool isForceTR(){
+			return  _forceTR;
+		}
+
+		bool isSwapPorts(){
+			return  _swapPorts;
+		}
+
+		int getAtt1(){
+			return _attenuation1;
+		}
+
+		int getAtt2(){
+			return _attenuation2;
+		}
 		
 		// diagnostics
 		
 		// called by background thread after frequencyCompletedCallback(); provides signal values
         // directly from hardware
         function<void(int freqIndex, const vector<array<complex<double>, 4> >& values)> frequencyCompletedCallback2_;
+
+		// internal methods
+		void* _mainThread();
+		void* _runAutoSweep();
 		
-		
-		// internal variables
+	private:
+	    // internal variables
 		void* _dev=NULL;
 		pthread_t _pth;
 		bool _threadRunning=false;
@@ -101,9 +139,18 @@ namespace xaxaxa {
 		function<void(const vector<VNARawValue>& vals)> _cb;
 		volatile function<void(const vector<VNARawValue>& vals)>* _cb_;
 		
-		// internal methods
-		void* _mainThread();
-		void* _runAutoSweep();
+		// frequency sweep parameters; do NOT change while background thread is running
+		double _startFreqHz=200e6;	// start frequency in Hz
+		double _stepFreqHz=25e6;		// step frequency in Hz
+		int _nPoints=50;				// how many frequency points
+		int _nValues=30;	 			// how many values to average over
+		int _nWait=20;				// how many values to skip after changing frequency
+		bool _disableReference = false;	// if true, do not divide by reference value
+		bool _forceTR = false;		// if device is full two port vna, force T/R mode
+		bool _swapPorts = false;		// only supported on full two port vna
+
+		// rf parameters
+		int _attenuation1=25, _attenuation2=25;
 	};
 }
 
