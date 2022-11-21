@@ -1,9 +1,10 @@
 #include "xavna_controller.h"
 #include <iostream>
 #include <fstream>
+#include <complex>
 
 // TODO
-// 1. Return measurement results.
+// 1. Properly convert data to dB.
 // 2. Calibration.
 // 3. Debug mode. Switch off chunkPoints etc..
 
@@ -83,34 +84,70 @@ extern "C"{
     }
 
     // Wait for one full measurement, and call cb with results
-    void saveMeasDataToFile(VNADevice* vna){
+    bool saveMeasDataToFile(VNADevice* vna){
         string filename = "meas.txt";
         if (vna == nullptr){
             std::cout << "Instance is null." << std::endl;
-            return;
+            return false;
         }
         
         if (!isScanning(vna)){
-            std::cout << "takeMeasurement: Sweep must be run first!" << std::endl;
-            return;
+            std::cout << "saveMeasDataToFile: Sweep must be run first!" << std::endl;
+            return false;
         }
 
         if (measurements.size() == 0){
-            std::cout << "takeMeasurement: Data is not available!" << std::endl;
-            return;
+            std::cout << "saveMeasDataToFile: Data is not available!" << std::endl;
+            return false;
         }
 
         ofstream myfile (filename);
         myfile.clear();
-        if (myfile.is_open())
-        {
-            for_each(measurements.begin(), measurements.end(), 
-                [&myfile](const VNARawValue& val){ myfile << val(0,0) << "\t" << val(1,0) << "\t" << val(0,1) << "\t"<< val(1,1) << "\n";}
-            );
-
-            myfile.close();
+        if (!myfile.is_open()){
+            cout << "saveMeasDataToFile: Unable to open file" + filename;
+            return false;
         }
-        else cout << "takeMeasurement: Unable to open file" + filename;
+        
+        for_each(measurements.begin(), measurements.end(), 
+            [&myfile](const VNARawValue& val){ myfile << val(0,0) << "\t" << val(1,0) << "\t" << val(0,1) << "\t"<< val(1,1) << "\n";}
+        );
+
+        myfile.close();
+        measurements.clear();
+        return true;
+    }
+
+    // Save the lates measurements to file.
+    bool saveS21MagnitudeToFile(VNADevice* vna){
+        string filename = "meas21.txt";
+        if (vna == nullptr){
+            std::cout << "Instance is null." << std::endl;
+            return false;
+        }
+        
+        if (!isScanning(vna)){
+            std::cout << "saveS21MagnitudeToFile: Sweep must be run first!" << std::endl;
+            return false;
+        }
+        
+        if (measurements.size() == 0){
+            //std::cout << "saveS21MagnitudeToFile: Data is not available!" << std::endl;
+            return false;
+        }
+
+        ofstream myfile (filename);
+        myfile.clear();
+        if (!myfile.is_open()){
+            cout << "saveS21MagnitudeToFile: Unable to open file" + filename;
+            return false;
+        }
+
+        for(auto point = 0; point < getPointsCount(vna); point++){
+            myfile << vna->freqAt(point) << "\t" << 10*log(std::abs(measurements.at(point)(1,0))) << "\n";
+        }
+        myfile.close();
+        measurements.clear();
+        return true;
     }
 
     // Changes sweep parameters. If sweep is running - stops it, changes parameters and run it again.
@@ -140,7 +177,6 @@ extern "C"{
         
         return vna->getStopFreqHz();
     }
-
 
     double getStepFreqHz(VNADevice* vna){
         if (vna == nullptr){
