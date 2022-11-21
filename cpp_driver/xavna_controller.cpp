@@ -4,9 +4,9 @@
 #include <complex>
 
 // TODO
-// 1. Properly convert data to dB.
-// 2. Calibration.
-// 3. Debug mode. Switch off chunkPoints etc..
+// 1. Calibration.
+// 2. Unready measurements handling.
+// 3. Find a way to avoid saving data to file.
 
 extern "C"{
     // Open a vna device
