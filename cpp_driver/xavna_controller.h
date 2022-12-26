@@ -32,16 +32,22 @@ extern "C"{
     // Changes sweep parameters. If sweep is running - stops it, changes parameters and run it again.
 	void setSweepParams(VNADevice* vna, double startFreqHz, double stopFreqHz, int points, int average);
 
+    // Returns start frequency in Hz.
     double getStartFreqHz(VNADevice* vna);
 
+    // Returns stop frequency in Hz
     double getStopFreqHz(VNADevice* vna);
 
+    // Returns frequency step in Hz
     double getStepFreqHz(VNADevice* vna);
 
+    // Returns count of points.
     int getPointsCount(VNADevice* vna);
 
+    // Returns average rate.
     int getAverageRate(VNADevice* vna);
 
+    // Returns delay after sweep in ms.
     int getSweepDelay(VNADevice* vna);
     
     bool isDisableReference(VNADevice* vna);
@@ -50,9 +56,12 @@ extern "C"{
 
     bool isSwapPorts(VNADevice* vna);
 
+    // Get attenuation of port #1
     int getAtt1(VNADevice* vna);
 
+    // Get attenuation of port #2
     int getAtt2(VNADevice* vna);
 
+    // Measured data.
     vector<VNARawValue> measurements;
 }

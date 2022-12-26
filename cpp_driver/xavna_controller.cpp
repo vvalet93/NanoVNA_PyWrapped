@@ -5,8 +5,7 @@
 
 // TODO
 // 1. Calibration.
-// 2. Unready measurements handling.
-// 3. Find a way to avoid saving data to file.
+// 2. Find a way to avoid saving data to file.
 
 extern "C"{
     // Open a vna device
