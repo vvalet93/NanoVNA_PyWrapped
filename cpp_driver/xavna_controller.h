@@ -50,17 +50,14 @@ extern "C"{
     // Returns delay after sweep in ms.
     int getSweepDelay(VNADevice* vna);
     
-    bool isDisableReference(VNADevice* vna);
-
-    bool isForceTR(VNADevice* vna);
-
-    bool isSwapPorts(VNADevice* vna);
-
     // Get attenuation of port #1
     int getAtt1(VNADevice* vna);
 
     // Get attenuation of port #2
     int getAtt2(VNADevice* vna);
+
+    // Returns true if VNA is calibrated.
+    bool isCalibrated();
 
     // Measured data.
     vector<VNARawValue> measurements;

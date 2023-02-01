@@ -58,7 +58,6 @@ public:
     // returns how many equations are required for calibration
     int nEquationsRequired();
     
-    
     // clear all added equations
     void clearEquations();
     

@@ -9,6 +9,8 @@
 
 using namespace std;
 
+typedef array<complex<double>,2> complex2;
+
 namespace xaxaxa {
 	class VNADevice {
 	public:
@@ -54,6 +56,9 @@ namespace xaxaxa {
 		
 		// whether the background thread is running
 		bool isScanning();
+
+		// Returns true if VNA is calibrated.
+		bool isCalibrated();
 		
 		// close the vna device
 		void close();
@@ -118,6 +123,10 @@ namespace xaxaxa {
 			return _attenuation2;
 		}
 		
+		void applySOLT();
+
+		void denySOLT();
+
 		// diagnostics
 		
 		// called by background thread after frequencyCompletedCallback(); provides signal values
@@ -138,6 +147,22 @@ namespace xaxaxa {
 		volatile uint32_t _measurementCnt=0;
 		function<void(const vector<VNARawValue>& vals)> _cb;
 		volatile function<void(const vector<VNARawValue>& vals)>* _cb_;
+
+		// Calibration variables.
+		enum {
+			CAL_SHORT=0,
+			CAL_OPEN,
+			CAL_LOAD,
+			CAL_THRU
+		};
+		
+		bool _isCalibrated=false;
+		bool _useCalibration=false;
+		array<vector<complex2>, 4> _calibrationReferences;
+		vector<array<complex<double>,3> > _cal_coeffs;	// the 3 calibration terms
+		vector<complex<double> > _cal_thru;				// the raw value for the thru reference
+		vector<complex<double> > _cal_thru_leak;			// leakage from port 1 forward to 2
+		vector<complex<double> > _cal_thru_leak_r;		// leakage from port 1 reflected to 2
 		
 		// frequency sweep parameters; do NOT change while background thread is running
 		double _startFreqHz=200e6;	// start frequency in Hz

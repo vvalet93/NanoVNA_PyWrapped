@@ -159,6 +159,7 @@ extern "C"{
     }
 
     // Sweep parameter variables reading.
+    // Returns start frequency in Hz.
     double getStartFreqHz(VNADevice* vna){
         if (vna == nullptr){
             std::cout << "Instance is null." << std::endl;
@@ -168,6 +169,7 @@ extern "C"{
         return vna->getStartFreqHz();
     }
 
+    // Returns stop frequency in Hz.
     double getStopFreqHz(VNADevice* vna){
         if (vna == nullptr){
             std::cout << "Instance is null." << std::endl;
@@ -177,6 +179,7 @@ extern "C"{
         return vna->getStopFreqHz();
     }
 
+    // Returns frequency step in Hz.
     double getStepFreqHz(VNADevice* vna){
         if (vna == nullptr){
             std::cout << "Instance is null." << std::endl;
@@ -186,7 +189,7 @@ extern "C"{
         return vna->getStepFreqHz();
     }
 
-
+    // Returns count of points.
     int getPointsCount(VNADevice* vna){
         if (vna == nullptr){
             std::cout << "Instance is null." << std::endl;
@@ -196,7 +199,7 @@ extern "C"{
         return vna->getPointsCount();
     }
 
-
+    // Returns average rate.
     int getAverageRate(VNADevice* vna){
         if (vna == nullptr){
             std::cout << "Instance is null." << std::endl;
@@ -206,7 +209,7 @@ extern "C"{
         return vna->getAverageRate();
     }
 
-
+    // Returns delay after sweep in ms.
     int getSweepDelay(VNADevice* vna){
         if (vna == nullptr){
             std::cout << "Instance is null." << std::endl;
@@ -216,35 +219,7 @@ extern "C"{
         return vna->getSweepDelay();
     }
 
-    
-    bool isDisableReference(VNADevice* vna){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return false;
-        }
-        
-        return vna->isDisableReference();
-    }
-
-
-    bool isForceTR(VNADevice* vna){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return false;
-        }
-        
-        return vna->isForceTR();
-    }
-
-    bool isSwapPorts(VNADevice* vna){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return false;
-        }
-        
-        return vna->isSwapPorts();
-    }
-
+    // Get attenuation of port #1
     int getAtt1(VNADevice* vna){
         if (vna == nullptr){
             std::cout << "Instance is null." << std::endl;
@@ -254,6 +229,7 @@ extern "C"{
         return vna->getAtt1();
     }
 
+    // Get attenuation of port #2
     int getAtt2(VNADevice* vna){
         if (vna == nullptr){
             std::cout << "Instance is null." << std::endl;
@@ -261,5 +237,11 @@ extern "C"{
         }
         
         return vna->getAtt2();
+    }
+
+    // Returns true if VNA is calibrated.
+    bool isCalibrated()
+    {
+        return false;
     }
 }

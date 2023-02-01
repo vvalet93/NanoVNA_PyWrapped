@@ -2,6 +2,7 @@
 #include "include/xavna.h"
 #include "include/platform_abstraction.H"
 #include "include/workarounds.H"
+#include "include/calibration.H"
 #include <pthread.h>
 #include <array>
 #include <chrono>
@@ -84,7 +85,13 @@ namespace xaxaxa {
 	bool VNADevice::isScanning() {
 		return _threadRunning;
 	}
-	void VNADevice::close() {
+
+    bool VNADevice::isCalibrated()
+    {
+        return _isCalibrated;
+    }
+
+    void VNADevice::close() {
 		if(_threadRunning) stopScan();
 		if(_dev != NULL) {
 			xavna_close(_dev);
@@ -120,8 +127,40 @@ namespace xaxaxa {
 		a = b;
 		b = tmp;
 	}
-	void* VNADevice::_mainThread() {
-		if(xavna_is_autosweep(_dev)) {
+
+    void VNADevice::applySOLT(){
+		if (_calibrationReferences.size() == 0 || !_isCalibrated)
+			throw logic_error("applySOLT: no calibration data to apply!");
+
+		int nPoints = _calibrationReferences[0].size();
+
+		for(int i=0;i<nPoints;i++) {
+			_cal_coeffs[i] = SOL_compute_coefficients(
+								_calibrationReferences[CAL_SHORT][i][0],
+								_calibrationReferences[CAL_OPEN][i][0],
+								_calibrationReferences[CAL_LOAD][i][0]);
+			if(_calibrationReferences[CAL_THRU].size() != 0)
+				_cal_thru[i] = _calibrationReferences[CAL_THRU][i][1];
+			else _cal_thru[i] = 1.;
+			
+			auto x1 = _calibrationReferences[CAL_LOAD][i][0],
+				y1 = _calibrationReferences[CAL_LOAD][i][1],
+				x2 = _calibrationReferences[CAL_OPEN][i][0],
+				y2 = _calibrationReferences[CAL_OPEN][i][1];
+			
+			_cal_thru_leak_r[i] = (y1-y2)/(x1-x2);
+			_cal_thru_leak[i] = y2-_cal_thru_leak_r[i]*x2;
+		}
+		_useCalibration = true;
+    }
+
+    void VNADevice::denySOLT(){
+		_useCalibration = false;
+    }
+
+    void *VNADevice::_mainThread()
+    {
+        if(xavna_is_autosweep(_dev)) {
 			return _runAutoSweep();
 		}
 		bool tr = isTRMode();
@@ -220,8 +259,8 @@ namespace xaxaxa {
 			
 		}
 		return NULL;
-	}
-	static complex<double> cx(const double* v) {
+    }
+    static complex<double> cx(const double* v) {
 		return {v[0], v[1]};
 	}
 	void* VNADevice::_runAutoSweep() {
