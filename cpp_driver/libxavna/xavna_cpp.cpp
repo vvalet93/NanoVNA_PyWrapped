@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <array>
 #include <chrono>
+#include <fstream>
 
 using namespace std;
 using namespace std::chrono;
@@ -127,6 +128,53 @@ namespace xaxaxa {
 		a = b;
 		b = tmp;
 	}
+
+	bool VNADevice::loadCalibration(char *calPath){
+		fstream calFile;
+		calFile.open(string(calPath), ios::in);
+
+		if (!calFile.is_open())
+		{
+			cout << string(calPath) + " was not found!\n";
+			return false;
+		}
+
+		string line;
+		vector<string> fileContent;
+		while (getline(calFile,line))
+		{
+			fileContent.push_back(line);
+		}
+
+		if (fileContent.size() < 11)
+		{
+			cout << string(calPath) + " is empty or corrupted!\n";
+			return false;
+		}
+
+		// New sweep settings will apply based on calibration file.
+		int points;
+		double startFreq, freqStep, stopFreq;
+
+		char separator = ' '; 
+		vector<string> sweepParams = stringSplit(fileContent[2], separator);
+		if (sweepParams.size() < 3)
+		{
+			cout << string(fileContent[2]) + " wrong number of sweep parameters!\n";
+			return false;
+		}
+
+		points = std::stoi(sweepParams[0]);
+		startFreq = std::stod(sweepParams[1]);
+		freqStep = std::stod(sweepParams[2]);
+		stopFreq = startFreq + (freqStep * (points - 1));
+		
+		// Here we should read all calibration data.
+		
+		setSweepParams(startFreq, stopFreq, points);
+		applySOLT();
+		return true;
+    }
 
     void VNADevice::applySOLT(){
 		if (_calibrationReferences.size() == 0 || !_isCalibrated)
@@ -372,6 +420,23 @@ namespace xaxaxa {
 		}
 		return NULL;
 	}
+
+    static vector<string> stringSplit(string str, char separator) {
+		vector<string> result;
+		int startIndex = 0, endIndex = 0;
+		for (int i = 0; i <= str.size(); i++) {
+			if (str[i] == separator || i == str.size()) {
+				endIndex = i;
+				string temp;
+				temp.append(str, startIndex, endIndex - startIndex);
+				result.push_back(temp);
+				startIndex = endIndex + 1;
+			}
+		}
+
+		return result;
+	}
+
 	static void* _mainThread_(void* param) {
 		return ((VNADevice*)param)->_mainThread();
 	}

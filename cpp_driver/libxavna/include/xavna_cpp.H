@@ -67,7 +67,7 @@ namespace xaxaxa {
 		void takeMeasurement(function<void(const vector<VNARawValue>& vals)> cb);
 
 		// Changes sweep parameters. If sweep is running - stops it, changes parameters and run it again.
-		void setSweepParams(double startFreqHz, double stopFreqHz, int points, int average);
+		void setSweepParams(double startFreqHz, double stopFreqHz, int points, int average = 1);
 		
 		// return the frequency in Hz at an array index
 		double freqAt(int i) {
@@ -127,6 +127,8 @@ namespace xaxaxa {
 
 		void denySOLT();
 
+		bool loadCalibration(char* filePath);
+
 		// diagnostics
 		
 		// called by background thread after frequencyCompletedCallback(); provides signal values
@@ -176,6 +178,8 @@ namespace xaxaxa {
 
 		// rf parameters
 		int _attenuation1=25, _attenuation2=25;
+
+		static vector<string> stringSplit(string str, char separator);
 	};
 }
 
