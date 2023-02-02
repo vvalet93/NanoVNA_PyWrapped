@@ -104,6 +104,7 @@ namespace xaxaxa {
 		bool stopWasTriggered {false};
 		if (_threadRunning){
 			stopScan();
+			cout << "Scanning stopped!\n";
 			stopWasTriggered = true;
 		} 
 		if (_threadRunning) throw logic_error("setSweepParams: could not stop sweep.");
@@ -112,8 +113,12 @@ namespace xaxaxa {
 		_stepFreqHz = (stopFreqHz - startFreqHz) / (points - 1);
 		_nPoints = points;
 		_nValues = average;
+		cout << "Sweep parameters have been updated!\n";
 
-		if (stopWasTriggered) startScan();
+		if (stopWasTriggered) {
+			startScan();
+			cout << "Scanning started!\n";
+		}
 	}
 	
 	void VNADevice::takeMeasurement(function<void(const vector<VNARawValue>& vals)> cb) {
@@ -171,7 +176,7 @@ namespace xaxaxa {
 		
 		int calFileHeaderLinesNumber = 3;
 		int calDataNumber = 4;
-		int calculatedCalFileLength = calFileHeaderLinesNumber + calDataNumber + points;
+		int calculatedCalFileLength = calFileHeaderLinesNumber + calDataNumber + (points * calDataNumber);
 		if (fileContent.size() != calculatedCalFileLength){
 			cout << "Wrong amount of calibration data! " << fileContent.size() << ", expected: " << calculatedCalFileLength;
 			return false;
@@ -189,9 +194,9 @@ namespace xaxaxa {
 				CalibrationType calType = calTypeMap[fileContent[i]];
 				for (int j = i + 1; j < points + i; j++){
 					vector<string> complexCalibData = stringSplit(fileContent[j], separator);
-					if (sweepParams.size() < 8)
+					if (complexCalibData.size() < 8)
 					{
-						cout << string(fileContent[2]) + " wrong number of calibration complex data!\n";
+						cout << string(fileContent[j]) + " wrong number of calibration complex data!\n";
 						return false;
 					}
 
@@ -201,11 +206,11 @@ namespace xaxaxa {
 					
 					vector<complex2> calData;
 					complex2 port1, port2;
-					port1[0] = complex<double>(std::stod(sweepParams[0]), std::stod(sweepParams[1]));
-					port1[1] = complex<double>(std::stod(sweepParams[2]), std::stod(sweepParams[3]));
+					port1[0] = complex<double>(std::stod(complexCalibData[0]), std::stod(complexCalibData[1]));
+					port1[1] = complex<double>(std::stod(complexCalibData[2]), std::stod(complexCalibData[3]));
 
-					port2[0] = complex<double>(std::stod(sweepParams[4]), std::stod(sweepParams[5]));
-					port2[1] = complex<double>(std::stod(sweepParams[6]), std::stod(sweepParams[7]));
+					port2[0] = complex<double>(std::stod(complexCalibData[4]), std::stod(complexCalibData[5]));
+					port2[1] = complex<double>(std::stod(complexCalibData[6]), std::stod(complexCalibData[7]));
 					
 					calData.push_back(port1);
 					calData.push_back(port2);
@@ -215,6 +220,7 @@ namespace xaxaxa {
 		}
 		
 		_isCalibrated = true;
+		cout << "Calibration from file " + string(calPath) + " was successfully read!\n";
 		setSweepParams(startFreq, stopFreq, points);
 		bool calibrationApplied = applySOLT();
 		if (calibrationApplied)
@@ -224,13 +230,14 @@ namespace xaxaxa {
     }
 
     bool VNADevice::applySOLT(){
-		if (_calibrationReferences.size() == 0 || !_isCalibrated){
+		cout << "Applying SOLT calibration...\n";
+		if (_calibrationReferences[0].size() == 0 || !_isCalibrated){
 			cout << "applySOLT: no calibration data to apply!\n";
 			return false;
 		}
 
 		int nPoints = _calibrationReferences[0].size();
-
+		cout << "Calibration points = "<< nPoints <<"\n";
 		for(int i=0;i<nPoints;i++) {
 			_cal_coeffs[i] = SOL_compute_coefficients(
 								_calibrationReferences[CAL_SHORT][i][0],
@@ -471,7 +478,7 @@ namespace xaxaxa {
 		return NULL;
 	}
 
-    static vector<string> stringSplit(string str, char separator) {
+    vector<string> VNADevice::stringSplit(string str, char separator) {
 		vector<string> result;
 		int startIndex = 0, endIndex = 0;
 		for (int i = 0; i <= str.size(); i++) {
