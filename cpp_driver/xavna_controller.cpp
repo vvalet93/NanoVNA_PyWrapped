@@ -239,9 +239,34 @@ extern "C"{
         return vna->getAtt2();
     }
 
-    // Returns true if VNA is calibrated.
-    bool isCalibrated()
-    {
-        return false;
+    // Load calibration from existing file.
+    bool loadSOLTCalibration(VNADevice* vna, char *filePath){
+        if (vna == nullptr){
+            std::cout << "Instance is null." << std::endl;
+            return false;
+        }
+        
+        return vna->loadSOLTCalibration(filePath);
+    }
+
+    // Apply measured or loaded calibraion. 
+    // Called automatically after device was calibrated or calibration filed loaded.
+    bool applySOLT(VNADevice* vna){
+        if (vna == nullptr){
+            std::cout << "Instance is null." << std::endl;
+            return false;
+        }
+        
+        return vna->applySOLT();
+    }
+
+    // Deny calibration without erasing calibration data. Might be applied back calling applySOLT()
+    void denySOLT(VNADevice* vna){
+        if (vna == nullptr){
+            std::cout << "Instance is null." << std::endl;
+            return;
+        }
+        
+        vna->denySOLT();
     }
 }

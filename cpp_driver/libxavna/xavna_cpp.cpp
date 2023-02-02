@@ -129,7 +129,7 @@ namespace xaxaxa {
 		b = tmp;
 	}
 
-	bool VNADevice::loadCalibration(char *calPath){
+	bool VNADevice::loadSOLTCalibration(char *calPath){
 		fstream calFile;
 		calFile.open(string(calPath), ios::in);
 
@@ -169,16 +169,65 @@ namespace xaxaxa {
 		freqStep = std::stod(sweepParams[2]);
 		stopFreq = startFreq + (freqStep * (points - 1));
 		
-		// Here we should read all calibration data.
+		int calFileHeaderLinesNumber = 3;
+		int calDataNumber = 4;
+		int calculatedCalFileLength = calFileHeaderLinesNumber + calDataNumber + points;
+		if (fileContent.size() != calculatedCalFileLength){
+			cout << "Wrong amount of calibration data! " << fileContent.size() << ", expected: " << calculatedCalFileLength;
+			return false;
+		}
+
+		std::map<std::string, CalibrationType> calTypeMap {
+			{"load1", CAL_LOAD},
+			{"open1", CAL_OPEN},
+			{"short1", CAL_SHORT},
+			{"thru", CAL_THRU}
+		};
+
+		for (int i = calFileHeaderLinesNumber; i < fileContent.size(); i++){
+			if (calTypeMap.count(fileContent[i])){
+				CalibrationType calType = calTypeMap[fileContent[i]];
+				for (int j = i + 1; j < points + i; j++){
+					vector<string> complexCalibData = stringSplit(fileContent[j], separator);
+					if (sweepParams.size() < 8)
+					{
+						cout << string(fileContent[2]) + " wrong number of calibration complex data!\n";
+						return false;
+					}
+
+					int calSize=sizeof(complex2) * points;
+					_calibrationReferences[calType].resize(0);
+					_calibrationReferences[calType].resize(points);
+					
+					vector<complex2> calData;
+					complex2 port1, port2;
+					port1[0] = complex<double>(std::stod(sweepParams[0]), std::stod(sweepParams[1]));
+					port1[1] = complex<double>(std::stod(sweepParams[2]), std::stod(sweepParams[3]));
+
+					port2[0] = complex<double>(std::stod(sweepParams[4]), std::stod(sweepParams[5]));
+					port2[1] = complex<double>(std::stod(sweepParams[6]), std::stod(sweepParams[7]));
+					
+					calData.push_back(port1);
+					calData.push_back(port2);
+					_calibrationReferences[calType] = calData;
+				}
+			}
+		}
 		
+		_isCalibrated = true;
 		setSweepParams(startFreq, stopFreq, points);
-		applySOLT();
+		bool calibrationApplied = applySOLT();
+		if (calibrationApplied)
+			cout << "Calibration from file " + string(calPath) + " was successfully applied!\n";
+		
 		return true;
     }
 
-    void VNADevice::applySOLT(){
-		if (_calibrationReferences.size() == 0 || !_isCalibrated)
-			throw logic_error("applySOLT: no calibration data to apply!");
+    bool VNADevice::applySOLT(){
+		if (_calibrationReferences.size() == 0 || !_isCalibrated){
+			cout << "applySOLT: no calibration data to apply!\n";
+			return false;
+		}
 
 		int nPoints = _calibrationReferences[0].size();
 
@@ -200,6 +249,7 @@ namespace xaxaxa {
 			_cal_thru_leak[i] = y2-_cal_thru_leak_r[i]*x2;
 		}
 		_useCalibration = true;
+		return true;
     }
 
     void VNADevice::denySOLT(){

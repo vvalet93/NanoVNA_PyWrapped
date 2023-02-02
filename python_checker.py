@@ -33,7 +33,9 @@ vna = xavna.VNA()
 if (vna.obj == 0):
     exit()
 
-vna.set_sweep_params(200e6, 500e6, 51, 1)
+#vna.set_sweep_params(200e6, 500e6, 51, 1)
+
+vna.loadSOLTCalibration("SOLT_750-1000-101.cal")
 start = vna.start_freq_hz
 stop = vna.stop_freq_hz
 points = vna.sweep_points_count

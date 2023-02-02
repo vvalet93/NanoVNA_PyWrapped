@@ -123,11 +123,11 @@ namespace xaxaxa {
 			return _attenuation2;
 		}
 		
-		void applySOLT();
+		bool applySOLT();
 
 		void denySOLT();
 
-		bool loadCalibration(char* filePath);
+		bool loadSOLTCalibration(char* filePath);
 
 		// diagnostics
 		
@@ -151,7 +151,7 @@ namespace xaxaxa {
 		volatile function<void(const vector<VNARawValue>& vals)>* _cb_;
 
 		// Calibration variables.
-		enum {
+		enum CalibrationType{
 			CAL_SHORT=0,
 			CAL_OPEN,
 			CAL_LOAD,

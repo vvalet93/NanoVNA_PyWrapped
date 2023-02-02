@@ -24,8 +24,18 @@ class VNA(object):
     def save_S21_magnitude_to_file(self) -> bool:
         self._xavnalib.saveS21MagnitudeToFile.restype = c_bool
         return self._xavnalib.saveS21MagnitudeToFile(self.obj)
-    
 
+    def loadSOLTCalibration(self, filePath: str) -> bool:
+        self._xavnalib.loadSOLTCalibration.restype = c_bool
+        return self._xavnalib.loadSOLTCalibration(self.obj, c_char_p(filePath))
+    
+    def applySOLT(self) -> bool:
+        self._xavnalib.applySOLT.restype = c_bool
+        return self._xavnalib.applySOLT(self.obj)
+
+    def denySOLT(self):
+        return self._xavnalib.denySOLT(self.obj)
+    
     def __del__(self):
         self.disconnect()
         self._xavnalib.dispose(self.obj)

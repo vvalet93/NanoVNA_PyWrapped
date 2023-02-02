@@ -56,8 +56,15 @@ extern "C"{
     // Get attenuation of port #2
     int getAtt2(VNADevice* vna);
 
-    // Returns true if VNA is calibrated.
-    bool isCalibrated();
+    // Load calibration from existing file.
+	bool loadSOLTCalibration(VNADevice* vna, char* filePath);
+
+    // Apply measured or loaded calibraion. 
+    // Called automatically after device was calibrated or calibration filed loaded.
+    bool applySOLT(VNADevice* vna);
+
+    // Deny calibration without erasing calibration data. Might be applied back calling applySOLT()
+	void denySOLT(VNADevice* vna);
 
     // Measured data.
     vector<VNARawValue> measurements;
