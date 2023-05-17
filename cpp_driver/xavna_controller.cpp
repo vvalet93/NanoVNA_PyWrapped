@@ -2,6 +2,12 @@
 #include <iostream>
 #include <fstream>
 #include <complex>
+#include <chrono>
+#include <ctime>  
+#include <iomanip>
+
+using namespace std;
+using namespace std::chrono;
 
 // TODO
 // 1. Calibration.
@@ -31,79 +37,64 @@ extern "C"{
 
     // Close the vna device.
     void disconnect(VNADevice* vna){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return;
+        if (vna != nullptr){
+            vna->close();
         }
-
-        vna->close();
-        std::cout << "Disconnected from VNA!" << std::endl;
     }
 
     // Dispose the object.
     void dispose(VNADevice* vna){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return;
+        if (vna != nullptr){
+            delete vna;
         }
-
-        delete vna;
-        std::cout << "Object was disposed." << std::endl;
     }
      
     // Start the frequency sweep background thread, which repeatedly performs
     // scans until it is stopped using stopScan()
     void startScan(VNADevice* vna){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return;
+        if (vna != nullptr){
+            vna->startScan();
         }
-            
-        vna->startScan();
     }
     
     // Stop the background thread
     void stopScan(VNADevice* vna){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return;
+        if (vna != nullptr){
+            vna->stopScan();
         }
-
-        vna->stopScan();
     }
     
     // Whether the background thread is running
     bool isScanning(VNADevice* vna){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return false;
+        if (vna != nullptr){
+            return vna->isScanning();
         }
         
-        return vna->isScanning();
+        return false;
     }
 
     // Wait for one full measurement, and call cb with results
     bool saveMeasDataToFile(VNADevice* vna){
         string filename = "meas.txt";
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
+        if (vna != nullptr){
+            controller_log("Instance is null.");
             return false;
         }
         
         if (!isScanning(vna)){
-            std::cout << "saveMeasDataToFile: Sweep must be run first!" << std::endl;
+            controller_log("saveMeasDataToFile: Sweep must be run first!");
             return false;
         }
 
         if (measurements.size() == 0){
-            std::cout << "saveMeasDataToFile: Data is not available!" << std::endl;
+            controller_log("saveMeasDataToFile: Data is not available!");
             return false;
         }
 
         ofstream myfile (filename);
         myfile.clear();
         if (!myfile.is_open()){
-            cout << "saveMeasDataToFile: Unable to open file" + filename;
+            controller_log("saveMeasDataToFile: Unable to open file" + filename);
             return false;
         }
         
@@ -119,25 +110,24 @@ extern "C"{
     // Save the lates measurements to file.
     bool saveS21MagnitudeToFile(VNADevice* vna){
         string filename = "meas21.txt";
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
+        if (vna != nullptr){
+            controller_log("Instance is null.");
             return false;
         }
         
         if (!isScanning(vna)){
-            std::cout << "saveS21MagnitudeToFile: Sweep must be run first!" << std::endl;
+            controller_log("saveS21MagnitudeToFile: Sweep must be run first!");
             return false;
         }
         
         if (measurements.size() == 0){
-            //std::cout << "saveS21MagnitudeToFile: Data is not available!" << std::endl;
             return false;
         }
 
         ofstream myfile (filename);
         myfile.clear();
         if (!myfile.is_open()){
-            cout << "saveS21MagnitudeToFile: Unable to open file" + filename;
+            controller_log("saveS21MagnitudeToFile: Unable to open file");
             return false;
         }
 
@@ -151,122 +141,127 @@ extern "C"{
 
     // Changes sweep parameters. If sweep is running - stops it, changes parameters and run it again.
 	void setSweepParams(VNADevice* vna, double startFreqHz, double stopFreqHz, int points, int average){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return;
+        if (vna != nullptr){
+            vna->setSweepParams(startFreqHz, stopFreqHz, points, average);
         }
-        vna->setSweepParams(startFreqHz, stopFreqHz, points, average);
     }
 
     // Sweep parameter variables reading.
     // Returns start frequency in Hz.
     double getStartFreqHz(VNADevice* vna){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return 0.0;
+        if (vna != nullptr){
+            return vna->getStartFreqHz();
         }
         
-        return vna->getStartFreqHz();
+        return 0.0;
     }
 
     // Returns stop frequency in Hz.
     double getStopFreqHz(VNADevice* vna){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return 0.0;
+        if (vna != nullptr){
+            return vna->getStopFreqHz();
         }
         
-        return vna->getStopFreqHz();
+        return 0.0;
     }
 
     // Returns frequency step in Hz.
     double getStepFreqHz(VNADevice* vna){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return 0.0;
+        if (vna != nullptr){
+            return vna->getStepFreqHz();
         }
         
-        return vna->getStepFreqHz();
+        return 0.0;
     }
 
     // Returns count of points.
     int getPointsCount(VNADevice* vna){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return 0;
+        if (vna != nullptr){
+            return vna->getPointsCount();
         }
         
-        return vna->getPointsCount();
+        return 0;
     }
 
     // Returns average rate.
     int getAverageRate(VNADevice* vna){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return 0;
+        if (vna != nullptr){
+            return vna->getAverageRate();
         }
         
-        return vna->getAverageRate();
+        return 0;
     }
 
     // Returns delay after sweep in ms.
     int getSweepDelay(VNADevice* vna){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return 0;
+        if (vna != nullptr){
+            return vna->getSweepDelay();
         }
         
-        return vna->getSweepDelay();
+        return 0;
     }
 
     // Get attenuation of port #1
     int getAtt1(VNADevice* vna){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return false;
+        if (vna != nullptr){
+            return vna->getAtt1();
         }
         
-        return vna->getAtt1();
+        return 0;
     }
 
     // Get attenuation of port #2
     int getAtt2(VNADevice* vna){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return false;
+        if (vna != nullptr){
+            return vna->getAtt2();
         }
         
-        return vna->getAtt2();
+        return 0;
     }
 
     // Load calibration from existing file.
     bool loadSOLTCalibration(VNADevice* vna, char *filePath){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return false;
+        if (vna != nullptr){
+            return vna->loadSOLTCalibration(filePath);
         }
         
-        return vna->loadSOLTCalibration(filePath);
+        return false;
     }
 
     // Apply measured or loaded calibraion. 
     // Called automatically after device was calibrated or calibration filed loaded.
     bool applySOLT(VNADevice* vna){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return false;
+        if (vna != nullptr){
+            return vna->applySOLT();
         }
-        
-        return vna->applySOLT();
+
+        return false;
     }
 
     // Deny calibration without erasing calibration data. Might be applied back calling applySOLT()
     void denySOLT(VNADevice* vna){
-        if (vna == nullptr){
-            std::cout << "Instance is null." << std::endl;
-            return;
-        }
-        
-        vna->denySOLT();
+        if (vna != nullptr){
+            vna->denySOLT();
+        }  
     }
+
+    // Switch on/off debug mode.
+	void debug(VNADevice* vna, bool debug)
+    {
+        _debug = debug;
+
+        if (vna != nullptr){
+            vna->debug(debug);
+        } 
+    }
+
+    // Prints log to console if debug mode is on.
+	void controller_log(std::string str)
+	{
+		if (_debug)
+		{
+			auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+			std::cout << "[" << std::put_time(std::localtime(&time), "%T") << "] " << str << std::endl;
+		}
+	}
 }

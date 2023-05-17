@@ -3,7 +3,7 @@
 using namespace xaxaxa;
 
 extern "C"{
-        // Open a vna device
+    // Open a vna device
     // Device will be found and selected automatically
     VNADevice* findVnaAndConnect();
 
@@ -65,6 +65,14 @@ extern "C"{
 
     // Deny calibration without erasing calibration data. Might be applied back calling applySOLT()
 	void denySOLT(VNADevice* vna);
+
+    // Switch on/off debug mode.
+	void debug(VNADevice* vna, bool debug);
+
+    // Prints log to console if debug mode is on.
+    void controller_log(std::string str);
+
+    bool _debug = false;
 
     // Measured data.
     vector<VNARawValue> measurements;

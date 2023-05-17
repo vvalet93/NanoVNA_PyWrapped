@@ -6,6 +6,8 @@
 #include <pthread.h>
 #include <array>
 #include <chrono>
+#include <ctime>  
+#include <iomanip>
 #include <fstream>
 
 using namespace std;
@@ -103,8 +105,9 @@ namespace xaxaxa {
 	void VNADevice::setSweepParams(double startFreqHz, double stopFreqHz, int points, int average) {
 		bool stopWasTriggered {false};
 		if (_threadRunning){
+			log("Need to stop scanning!");
 			stopScan();
-			cout << "Scanning stopped!\n";
+			log("Scanning stopped!");
 			stopWasTriggered = true;
 		} 
 		if (_threadRunning) throw logic_error("setSweepParams: could not stop sweep.");
@@ -113,11 +116,11 @@ namespace xaxaxa {
 		_stepFreqHz = (stopFreqHz - startFreqHz) / (points - 1);
 		_nPoints = points;
 		_nValues = average;
-		cout << "Sweep parameters have been updated!\n";
+		log("Sweep parameters have been updated!");
 
 		if (stopWasTriggered) {
 			startScan();
-			cout << "Scanning started!\n";
+			log("Scanning started!");
 		}
 	}
 	
@@ -140,7 +143,7 @@ namespace xaxaxa {
 
 		if (!calFile.is_open())
 		{
-			cout << string(calPath) + " was not found!\n";
+			log(string(calPath) + " was not found!");
 			return false;
 		}
 
@@ -153,7 +156,7 @@ namespace xaxaxa {
 
 		if (fileContent.size() < 11)
 		{
-			cout << string(calPath) + " is empty or corrupted!\n";
+			log(string(calPath) + " is empty or corrupted!");
 			return false;
 		}
 
@@ -165,7 +168,7 @@ namespace xaxaxa {
 		vector<string> sweepParams = stringSplit(fileContent[2], separator);
 		if (sweepParams.size() < 3)
 		{
-			cout << string(fileContent[2]) + " wrong number of sweep parameters!\n";
+			log(string(fileContent[2]) + " wrong number of sweep parameters!");
 			return false;
 		}
 
@@ -173,12 +176,14 @@ namespace xaxaxa {
 		startFreq = std::stod(sweepParams[1]);
 		freqStep = std::stod(sweepParams[2]);
 		stopFreq = startFreq + (freqStep * (points - 1));
+
+		log("Sweep params: Points:" + std::to_string(points) + ", Start freq, Hz:" + std::to_string(startFreq) + ", Stop freq, Hz:" + std::to_string(stopFreq) + ", Step, Hz:" + std::to_string(freqStep));
 		
 		int calFileHeaderLinesNumber = 3;
 		int calDataNumber = 4;
 		int calculatedCalFileLength = calFileHeaderLinesNumber + calDataNumber + (points * calDataNumber);
 		if (fileContent.size() != calculatedCalFileLength){
-			cout << "Wrong amount of calibration data! " << fileContent.size() << ", expected: " << calculatedCalFileLength;
+			log("Wrong amount of calibration data! " + std::to_string(fileContent.size()) + ", expected: " + std::to_string(calculatedCalFileLength));
 			return false;
 		}
 
@@ -196,7 +201,7 @@ namespace xaxaxa {
 					vector<string> complexCalibData = stringSplit(fileContent[j], separator);
 					if (complexCalibData.size() < 8)
 					{
-						cout << string(fileContent[j]) + " wrong number of calibration complex data!\n";
+						log(string(fileContent[j]) + " wrong number of calibration complex data!");
 						return false;
 					}
 
@@ -220,24 +225,24 @@ namespace xaxaxa {
 		}
 		
 		_isCalibrated = true;
-		cout << "Calibration from file " + string(calPath) + " was successfully read!\n";
+		log("Calibration from file " + string(calPath) + " was successfully read!");
 		setSweepParams(startFreq, stopFreq, points);
 		bool calibrationApplied = applySOLT();
 		if (calibrationApplied)
-			cout << "Calibration from file " + string(calPath) + " was successfully applied!\n";
+			log("Calibration from file " + string(calPath) + " was successfully applied!");
 		
 		return true;
     }
 
     bool VNADevice::applySOLT(){
-		cout << "Applying SOLT calibration...\n";
+		log("Applying SOLT calibration...");
 		if (_calibrationReferences[0].size() == 0 || !_isCalibrated){
-			cout << "applySOLT: no calibration data to apply!\n";
+			log("applySOLT: no calibration data to apply!");
 			return false;
 		}
 
 		int nPoints = _calibrationReferences[0].size();
-		cout << "Calibration points = "<< nPoints <<"\n";
+		log("Calibration points = " + std::to_string(nPoints));
 		for(int i=0;i<nPoints;i++) {
 			_cal_coeffs[i] = SOL_compute_coefficients(
 								_calibrationReferences[CAL_SHORT][i][0],
@@ -252,8 +257,8 @@ namespace xaxaxa {
 				x2 = _calibrationReferences[CAL_OPEN][i][0],
 				y2 = _calibrationReferences[CAL_OPEN][i][1];
 			
-			_cal_thru_leak_r[i] = (y1-y2)/(x1-x2);
-			_cal_thru_leak[i] = y2-_cal_thru_leak_r[i]*x2;
+			_cal_thru_leak_r.push_back((y1-y2)/(x1-x2));
+			_cal_thru_leak.push_back(y2-_cal_thru_leak_r[i]*x2);
 		}
 		_useCalibration = true;
 		return true;
@@ -408,7 +413,7 @@ namespace xaxaxa {
 					rawValues[0][j] += currRawValue[j];
 
 				if(value.freqIndex >= _nPoints) {
-					fprintf(stderr, "warning: hw returned freqIndex (%d) >= _nPoints (%d)\n", value.freqIndex, _nPoints);
+					fprintf(stderr, "warning: hw returned freqIndex (%d) >= _nPoints (%d)", value.freqIndex, _nPoints);
 					continue;
 				}
 
@@ -473,7 +478,7 @@ namespace xaxaxa {
 			if(newChunkPoints < 8) newChunkPoints = 8;
 			currChunkPoints = currChunkPoints * 0.7 + newChunkPoints * 0.3;
 			chunkPoints = (int)currChunkPoints;
-			//fprintf(stderr, "chunkPoints %d\n", chunkPoints);
+			//fprintf(stderr, "chunkPoints %d", chunkPoints);
 		}
 		return NULL;
 	}
@@ -492,6 +497,22 @@ namespace xaxaxa {
 		}
 
 		return result;
+	}
+
+	// Switch on/off debug mode.
+	void VNADevice::debug(bool on)
+	{
+		_debug = on;
+	}
+
+	// Prints log to console if debug mode is on.
+	void VNADevice::log(std::string str)
+	{
+		if (_debug)
+		{
+			auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+			std::cout << "[" << std::put_time(std::localtime(&time), "%T") << "] " << str << std::endl;
+		}
 	}
 
 	static void* _mainThread_(void* param) {

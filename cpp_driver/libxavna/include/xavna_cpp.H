@@ -129,6 +129,9 @@ namespace xaxaxa {
 
 		bool loadSOLTCalibration(char* filePath);
 
+		// Switch on/off debug mode.
+		void debug(bool debug);
+
 		// diagnostics
 		
 		// called by background thread after frequencyCompletedCallback(); provides signal values
@@ -146,6 +149,7 @@ namespace xaxaxa {
 		bool _threadRunning=false;
 		bool _shouldExit=false;
 		bool _lastDeviceIsAutosweep=false;
+		bool _debug=false;
 		volatile uint32_t _measurementCnt=0;
 		function<void(const vector<VNARawValue>& vals)> _cb;
 		volatile function<void(const vector<VNARawValue>& vals)>* _cb_;
@@ -180,6 +184,7 @@ namespace xaxaxa {
 		int _attenuation1=25, _attenuation2=25;
 
 		static vector<string> stringSplit(string str, char separator);
+		void log(std::string str);
 	};
 }
 

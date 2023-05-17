@@ -37,6 +37,9 @@ class VNA(object):
     def denySOLT(self):
         return self._xavnalib.denySOLT(self.obj)
     
+    def debug(self, debug):
+        return self._xavnalib.debug(self.obj, debug)
+    
     def __del__(self):
         self.disconnect()
         self._xavnalib.dispose(self.obj)

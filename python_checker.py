@@ -1,6 +1,5 @@
 import xavna
 import time
-import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
@@ -25,16 +24,16 @@ def take_sweep(x):
             plt.xlabel('Frequency, MHz')
             plt.ylabel('Magnitude, dB')
             plt.xlim(start/1e6, stop/1e6)
-            plt.ylim(-10, 3)
+            plt.ylim(-70, 3)
 
 # To make it work on Debian.
-matplotlib.use("TkAgg")
+#matplotlib.use("TkAgg")
 vna = xavna.VNA()
 if (vna.obj == 0):
     exit()
 
-#vna.set_sweep_params(200e6, 500e6, 51, 1)
-
+#vna.set_sweep_params(750e6, 1000e6, 201, 1)
+vna.debug(True)
 vna.loadSOLTCalibration("SOLT_750-1000-101.cal")
 start = vna.start_freq_hz
 stop = vna.stop_freq_hz
@@ -46,7 +45,6 @@ time.sleep(5)
 
 fig = plt.figure()
 ax = fig.add_subplot(1, 1, 1)
-
 while(1):
     ani = animation.FuncAnimation(fig, take_sweep, interval=100)
     plt.show()

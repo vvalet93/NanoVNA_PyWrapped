@@ -402,7 +402,6 @@ void CalibrationEngine::addNormalizingEquation() {
 #undef T4
 
 MatrixXcd CalibrationEngine::computeCoefficients() {
-    //cout << _equations << endl;
     auto tmp = _equations.colPivHouseholderQr();
     if(tmp.rank() != nCoeffs()) throw runtime_error("matrix rank is not full! should be " + to_string(nCoeffs()) + ", is " + to_string(tmp.rank()));
 
