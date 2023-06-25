@@ -76,7 +76,7 @@ extern "C"{
     // Wait for one full measurement, and call cb with results
     bool saveMeasDataToFile(VNADevice* vna){
         string filename = "meas.txt";
-        if (vna != nullptr){
+        if (vna == nullptr){
             controller_log("Instance is null.");
             return false;
         }
@@ -110,7 +110,7 @@ extern "C"{
     // Save the lates measurements to file.
     bool saveS21MagnitudeToFile(VNADevice* vna){
         string filename = "meas21.txt";
-        if (vna != nullptr){
+        if (vna == nullptr){
             controller_log("Instance is null.");
             return false;
         }

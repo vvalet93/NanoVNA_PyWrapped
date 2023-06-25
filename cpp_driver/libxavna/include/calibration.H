@@ -7,6 +7,7 @@
 #include <functional>
 #include <map>
 #include "common.H"
+#include <iostream>
 using namespace std;
 using namespace Eigen;
 

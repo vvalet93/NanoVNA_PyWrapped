@@ -177,7 +177,7 @@ namespace xaxaxa {
 		freqStep = std::stod(sweepParams[2]);
 		stopFreq = startFreq + (freqStep * (points - 1));
 
-		log("Sweep params: Points:" + std::to_string(points) + ", Start freq, Hz:" + std::to_string(startFreq) + ", Stop freq, Hz:" + std::to_string(stopFreq) + ", Step, Hz:" + std::to_string(freqStep));
+		log("Sweep params: Points:" + std::to_string(points) + ", Start freq, MHz:" + std::to_string(startFreq / 1e6) + ", Stop freq, MHz:" + std::to_string(stopFreq / 1e6) + ", Step, MHz:" + std::to_string(freqStep / 1e6));
 		
 		int calFileHeaderLinesNumber = 3;
 		int calDataNumber = 4;
@@ -194,10 +194,16 @@ namespace xaxaxa {
 			{"thru", CAL_THRU}
 		};
 
+		
 		for (int i = calFileHeaderLinesNumber; i < fileContent.size(); i++){
 			if (calTypeMap.count(fileContent[i])){
 				CalibrationType calType = calTypeMap[fileContent[i]];
-				for (int j = i + 1; j < points + i; j++){
+				vector<complex2> calData;
+				int calSize = 8 * points;
+				_calibrationReferences[calType].resize(0);
+				_calibrationReferences[calType].resize(points);
+
+				for (int j = i + 1; j <= points + i; j++){
 					vector<string> complexCalibData = stringSplit(fileContent[j], separator);
 					if (complexCalibData.size() < 8)
 					{
@@ -205,22 +211,18 @@ namespace xaxaxa {
 						return false;
 					}
 
-					int calSize=sizeof(complex2) * points;
-					_calibrationReferences[calType].resize(0);
-					_calibrationReferences[calType].resize(points);
-					
-					vector<complex2> calData;
 					complex2 port1, port2;
 					port1[0] = complex<double>(std::stod(complexCalibData[0]), std::stod(complexCalibData[1]));
 					port1[1] = complex<double>(std::stod(complexCalibData[2]), std::stod(complexCalibData[3]));
-
 					port2[0] = complex<double>(std::stod(complexCalibData[4]), std::stod(complexCalibData[5]));
 					port2[1] = complex<double>(std::stod(complexCalibData[6]), std::stod(complexCalibData[7]));
-					
+
 					calData.push_back(port1);
 					calData.push_back(port2);
-					_calibrationReferences[calType] = calData;
 				}
+
+				log("Assigning to calData for " + fileContent[i] + ". Number of assigned points is  " + std::to_string(calData.size() / 2 + 1));
+				_calibrationReferences[calType] = calData;
 			}
 		}
 		
@@ -241,22 +243,20 @@ namespace xaxaxa {
 			return false;
 		}
 
-		int nPoints = _calibrationReferences[0].size();
+		int nPoints = _calibrationReferences[CAL_SHORT].size();
 		log("Calibration points = " + std::to_string(nPoints));
 		for(int i=0;i<nPoints;i++) {
-			_cal_coeffs[i] = SOL_compute_coefficients(
+			_cal_coeffs.push_back(SOL_compute_coefficients(
 								_calibrationReferences[CAL_SHORT][i][0],
 								_calibrationReferences[CAL_OPEN][i][0],
-								_calibrationReferences[CAL_LOAD][i][0]);
+								_calibrationReferences[CAL_LOAD][i][0]));
 			if(_calibrationReferences[CAL_THRU].size() != 0)
-				_cal_thru[i] = _calibrationReferences[CAL_THRU][i][1];
-			else _cal_thru[i] = 1.;
-			
+				_cal_thru.push_back(_calibrationReferences[CAL_THRU][i][1]);
+			else _cal_thru.push_back(1);
 			auto x1 = _calibrationReferences[CAL_LOAD][i][0],
 				y1 = _calibrationReferences[CAL_LOAD][i][1],
 				x2 = _calibrationReferences[CAL_OPEN][i][0],
 				y2 = _calibrationReferences[CAL_OPEN][i][1];
-			
 			_cal_thru_leak_r.push_back((y1-y2)/(x1-x2));
 			_cal_thru_leak.push_back(y2-_cal_thru_leak_r[i]*x2);
 		}
