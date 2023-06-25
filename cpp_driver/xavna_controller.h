@@ -24,10 +24,10 @@ extern "C"{
     bool isScanning(VNADevice* vna);
 
     // Saves the lates measurements to file meas.txt. Returns true if data was saved.
-    bool saveMeasDataToFile(VNADevice* vna);
+    bool saveMeasDataToFile(VNADevice* vna, bool clearBuffer = true);
 
     // Saves S21 magnitudeto file meas21.txt. Returns true if data was saved.
-    bool saveS21MagnitudeToFile(VNADevice* vna);
+    bool saveS21MagnitudeToFile(VNADevice* vna, bool clearBuffer = true);
 
     // Changes sweep parameters. If sweep is running - stops it, changes parameters and run it again.
 	void setSweepParams(VNADevice* vna, double startFreqHz, double stopFreqHz, int points, int average);

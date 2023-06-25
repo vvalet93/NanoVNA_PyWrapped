@@ -6,6 +6,7 @@ import matplotlib.animation as animation
 def take_sweep(x):
     file_saved = False
     while not file_saved:
+        vna.save_meas_data_to_file(False)
         file_saved = vna.save_S21_magnitude_to_file()
 
         if (file_saved):

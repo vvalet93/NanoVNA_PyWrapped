@@ -74,7 +74,7 @@ extern "C"{
     }
 
     // Wait for one full measurement, and call cb with results
-    bool saveMeasDataToFile(VNADevice* vna){
+    bool saveMeasDataToFile(VNADevice* vna, bool clearBuffer){
         string filename = "meas.txt";
         if (vna == nullptr){
             controller_log("Instance is null.");
@@ -87,7 +87,6 @@ extern "C"{
         }
 
         if (measurements.size() == 0){
-            controller_log("saveMeasDataToFile: Data is not available!");
             return false;
         }
 
@@ -103,12 +102,13 @@ extern "C"{
         );
 
         myfile.close();
-        measurements.clear();
+        if (clearBuffer)
+            measurements.clear();
         return true;
     }
 
     // Save the lates measurements to file.
-    bool saveS21MagnitudeToFile(VNADevice* vna){
+    bool saveS21MagnitudeToFile(VNADevice* vna, bool clearBuffer){
         string filename = "meas21.txt";
         if (vna == nullptr){
             controller_log("Instance is null.");
@@ -135,7 +135,9 @@ extern "C"{
             myfile << vna->freqAt(point) << "\t" << 10*log(std::abs(measurements.at(point)(1,0))) << "\n";
         }
         myfile.close();
-        measurements.clear();
+        if (clearBuffer)
+            measurements.clear();
+
         return true;
     }
 

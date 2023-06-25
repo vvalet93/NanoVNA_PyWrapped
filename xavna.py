@@ -17,13 +17,13 @@ class VNA(object):
     def set_sweep_params(self, start_freq, stop_freq, points, average):
         self._xavnalib.setSweepParams(self.obj, c_double(start_freq), c_double(stop_freq), c_int(points), c_int(average))
 
-    def save_meas_data_to_file(self) -> bool:
+    def save_meas_data_to_file(self, clear_buffer = True) -> bool:
         self._xavnalib.saveMeasDataToFile.restype = c_bool
-        return self._xavnalib.saveMeasDataToFile(self.obj)
+        return self._xavnalib.saveMeasDataToFile(self.obj, clear_buffer)
 
-    def save_S21_magnitude_to_file(self) -> bool:
+    def save_S21_magnitude_to_file(self, clear_buffer = True) -> bool:
         self._xavnalib.saveS21MagnitudeToFile.restype = c_bool
-        return self._xavnalib.saveS21MagnitudeToFile(self.obj)
+        return self._xavnalib.saveS21MagnitudeToFile(self.obj, clear_buffer)
 
     def loadSOLTCalibration(self, filePath) -> bool:
         self._xavnalib.loadSOLTCalibration.restype = c_bool
