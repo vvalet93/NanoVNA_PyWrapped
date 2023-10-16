@@ -6,7 +6,7 @@ import matplotlib.animation as animation
 def take_sweep(x):
     file_saved = False
     while not file_saved:
-        vna.save_meas_data_to_file(False)
+        #vna.save_meas_data_to_file(False)
         file_saved = vna.save_S21_magnitude_to_file()
 
         if (file_saved):
@@ -35,14 +35,15 @@ if (vna.obj == 0):
 
 #vna.set_sweep_params(750e6, 1000e6, 201, 1)
 vna.debug(True)
-vna.loadSOLTCalibration("SOLT_750-1000-101.cal")
+vna.loadSOLTCalibration("SOLT_750-1000-100.cal")
+#vna.denySOLT()
 start = vna.start_freq_hz
 stop = vna.stop_freq_hz
 points = vna.sweep_points_count
 average = vna.average_rate
 
 vna.start_scan()
-time.sleep(5)
+time.sleep(1)
 
 fig = plt.figure()
 ax = fig.add_subplot(1, 1, 1)

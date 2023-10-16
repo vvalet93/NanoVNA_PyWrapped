@@ -218,10 +218,10 @@ namespace xaxaxa {
 					port2[1] = complex<double>(std::stod(complexCalibData[6]), std::stod(complexCalibData[7]));
 
 					calData.push_back(port1);
-					calData.push_back(port2);
+					//calData.push_back(port2); I don't care about port2
 				}
 
-				log("Assigning to calData for " + fileContent[i] + ". Number of assigned points is  " + std::to_string(calData.size() / 2 + 1));
+				log("Assigning to calData for " + fileContent[i] + ". Number of assigned points is  " + std::to_string(calData.size() + 1));
 				_calibrationReferences[calType] = calData;
 			}
 		}
@@ -436,7 +436,35 @@ namespace xaxaxa {
 					frequencyCompletedCallback2_(value.freqIndex, rawValues);
 					results[value.freqIndex] = tmp;
 					if(value.freqIndex == _nPoints - 1)
-						sweepCompletedCallback(results);
+					{
+						if (_useCalibration)
+						{	
+							int freqInd = 0;
+
+							for(auto& res : results)
+							{
+								auto refl = res(0,0);
+								auto thru = res(1,0);
+
+								refl = SOL_compute_reflection(_cal_coeffs[i], res(0,0));
+								thru = res(1,0) - (_cal_thru_leak[i] + res(0,0)*_cal_thru_leak_r[i]);
+								auto refThru = _cal_thru[i] - (_cal_thru_leak[i] + res(0,0)*_cal_thru_leak_r[i]);
+								thru /= refThru;
+								
+								res(0,0) = refl;
+								res(1,0) = thru;
+
+								freqInd++;
+							}
+
+							sweepCompletedCallback(results);
+						}
+						else
+						{
+							sweepCompletedCallback(results);
+						}
+					}
+
 					rawValues[0] = {0., 0., 0., 0.};
 				}
 				if(_shouldExit) return NULL;
